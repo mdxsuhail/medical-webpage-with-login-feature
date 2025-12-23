@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SB-MED | Professional Diagnostic Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #0052cc; --accent: #36b37e;
+            --dark: #091e42; --danger: #ff5630;
+            --warning: #ffab00; --brand-blue: #1e40af;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: #ffffff; color: var(--dark); line-height: 1.6; padding-top: 80px; }
+
+        nav {
+            position: fixed; top: 0; width: 100%; padding: 15px 8%;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); z-index: 2000;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 350px; gap: 30px; padding: 40px 8%; }
+
+        /* Card Styles */
+        .form-card { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #edf2f7; margin-bottom: 20px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
+        .input-box label { display: block; font-weight: 700; font-size: 0.8rem; margin-bottom: 8px; color: #64748b; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; background: white; outline: none; }
+
+        .ref-box { margin-top: 20px; padding: 15px; border-radius: 12px; background: #f8fafc; border-left: 5px solid var(--primary); }
+        .status-green { color: var(--accent); } .status-yellow { color: var(--warning); } .status-red { color: var(--danger); }
+
+        /* Meter */
+        .meter-card { background: white; padding: 30px; border-radius: 24px; border: 1px solid #edf2f7; text-align: center; position: sticky; top: 110px; }
+        .gauge-container { position: relative; width: 200px; height: 100px; margin: 10px auto; overflow: hidden; }
+        .gauge-bg { width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(from 270deg, #36b37e 0%, #ffab00 50%, #ff5630 100%); mask: radial-gradient(transparent 65%, black 66%); -webkit-mask: radial-gradient(transparent 65%, black 66%); }
+        .gauge-needle { position: absolute; bottom: 0; left: 50%; width: 4px; height: 80px; background: var(--dark); transform-origin: bottom center; transform: rotate(-90deg); transition: 1s; }
+        
+        /* Buttons & Tables */
+        .btn-add { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 20px; }
+        .btn-export { background: #000; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .table-container { background: white; border-radius: 24px; border: 1px solid #eee; overflow: hidden; padding: 25px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background: #f8fafc; text-align: left; padding: 15px; font-size: 0.75rem; color: #718096; }
+        td { padding: 15px; border-bottom: 1px solid #f7fafc; font-size: 0.85rem; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; }
+
+        /* PDF Elements */
+        .report-header { display: none; margin-bottom: 25px; border-bottom: 2px solid var(--primary); padding-bottom: 15px; }
+        .signature-area { display: none; margin-top: 50px; border-top: 1px solid #000; width: 250px; text-align: center; padding-top: 10px; font-weight: 700; font-size: 0.9rem; }
+
+        /* Google Review & Credits */
+        .review-footer { padding: 60px 8%; background: #f8fafc; text-align: center; border-top: 1px solid #eee; margin-top: 50px; }
+        .btn-google { display: inline-flex; align-items: center; gap: 10px; background: white; color: #5f6368; padding: 12px 25px; border-radius: 50px; text-decoration: none; font-weight: 700; border: 1px solid #dadce0; }
+        
+        .credits-box { margin-top: 40px; padding: 20px; }
+        .team-name { font-weight: 800; font-size: 1.2rem; color: var(--dark); margin-bottom: 5px; }
+        .institution { font-weight: 700; color: var(--brand-blue); font-size: 1rem; }
+
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+
+    <nav class="no-print">
+        <div style="font-weight: 800; font-size: 1.5rem;">SB-MED<span style="color: var(--primary);">.01</span></div>
+        <div class="user-profile">
+            <span id="userNameDisplay" style="font-weight: 700; font-size: 0.85rem; margin-right: 15px;">USER</span>
+            <a href="login.html" style="color:var(--danger); text-decoration:none; font-weight:800; font-size:0.75rem;">LOGOUT</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-grid">
+        <main>
+            <div class="form-card no-print">
+                <h3 style="margin-bottom: 15px; font-size: 1rem;"><i class="fa-solid fa-id-card"></i> Patient Identity</h3>
+                <div class="form-grid">
+                    <div class="input-box">
+                        <label>Patient Full Name</label>
+                        <input type="text" id="patientName" placeholder="John Doe">
+                    </div>
+                    <div class="input-box">
+                        <label>Case ID / MRN</label>
+                        <input type="text" id="caseID" placeholder="SB-2025-001">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-card no-print">
+                <h3 style="margin-bottom: 15px; font-size: 1rem;"><i class="fa-solid fa-microscope"></i> New Diagnostic Entry</h3>
+                <form id="patientForm">
+                    <div class="form-grid">
+                        <div class="input-box">
+                            <label>Organ System</label>
+                            <select id="panelType" onchange="updateBiomarkerOptions()">
+                                <option value="Liver">Liver Panel</option>
+                                <option value="Kidney">Kidney Panel</option>
+                                <option value="Cardiac">Cardiac Panel</option>
+                                <option value="Diabetes">Diabetes Panel</option>
+                            </select>
+                        </div>
+                        <div class="input-box">
+                            <label>Biomarker</label>
+                            <select id="biomarkerSelect" onchange="updateRefRanges()"></select>
+                        </div>
+                        <div class="input-box">
+                            <label>AI Risk Level</label>
+                            <select id="riskLevel">
+                                <option value="0">Normal</option>
+                                <option value="1">Warning</option>
+                                <option value="2">Critical</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="refBox" class="ref-box">
+                        <div class="ref-item"><span class="status-green">NORMAL: <b id="rangeNormal">--</b></span></div>
+                        <div class="ref-item"><span class="status-yellow">WARNING: <b id="rangeWarning">--</b></span></div>
+                        <div class="ref-item"><span class="status-red">CRITICAL: <b id="rangeCritical">--</b></span></div>
+                    </div>
+                    <button type="submit" class="btn-add">Analyze & Commit</button>
+                </form>
+            </div>
+
+            <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: center;" class="no-print">
+                <h3>Clinical Record Database</h3>
+                <button class="btn-export" onclick="exportPDF()">
+                    <i class="fa-solid fa-file-pdf"></i> Export Clinical Report
+                </button>
+            </div>
+
+            <div class="table-container" id="reportArea">
+                <div id="pdfHeader" class="report-header">
+                    <h2 style="color: var(--primary);">SB-MED CLINICAL DIAGNOSTIC REPORT</h2>
+                    <p style="font-size: 0.9rem; margin-top: 8px;">
+                        <strong>Patient:</strong> <span id="displayPatient">--</span> | 
+                        <strong>Case ID:</strong> <span id="displayCase">--</span> | 
+                        <strong>Date:</strong> <span id="reportDate">--</span>
+                    </p>
+                </div>
+                
+                <table id="patientTable">
+                    <thead>
+                        <tr><th>Time</th><th>Panel</th><th>Biomarker</th><th>AI Status</th><th class="no-print">Manage</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+                <div id="pdfSignature" class="signature-area">
+                    Authorized Medical Signature
+                </div>
+            </div>
+        </main>
+
+        <aside class="no-print">
+            <div class="meter-card">
+                <p style="font-size: 0.7rem; font-weight: 800; color: #94a3b8;">SYSTEM RISK INDEX</p>
+                <div class="gauge-container">
+                    <div class="gauge-bg"></div>
+                    <div id="needle" class="gauge-needle"></div>
+                </div>
+                <div id="statusText" style="font-size: 1.4rem; font-weight: 800; color: var(--accent);">STABLE</div>
+            </div>
+        </aside>
+    </div>
+
+    <section class="review-footer no-print">
+        <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+            <h3 style="font-weight: 800;">System Peer Review</h3>
+            <p style="color: #64748b; margin: 15px 0;">Help us refine our AI thresholds for better clinical outcomes.</p>
+            <a href="https://docs.google.com/forms" target="_blank" class="btn-google"> // insert google form link here
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Forms_2020_Logo.svg" width="20" alt="Google">
+                Submit Feedback on Google Forms
+            </a>
+            
+            <div class="credits-box">
+                <p class="team-name">TEAM IDEATORS</p>
+                <p class="institution">Jyothy Institute of Technology</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const clinicalData = {
+            "Liver": { "ALT": { n: "7-55 U/L", w: "56-150", c: ">150" }, "AST": { n: "8-48 U/L", w: "49-120", c: ">120" } },
+            "Kidney": { "Creatinine": { n: "0.7-1.3 mg/dL", w: "1.4-1.9", c: ">2.0" }, "Urea": { n: "7-20 mg/dL", w: "21-40", c: ">40" }, "Cystatin C": { n: "0.6-1.0 mg/L", w: "1.1-1.5", c: ">1.5" } },
+            "Cardiac": { "Troponin I/T": { n: "<0.04 ng/mL", w: "0.04-0.39", c: ">0.40" }, "CK-MB": { n: "0-5 ng/mL", w: "5-10", c: ">10" } },
+            "Diabetes": { "Glucose": { n: "70-99 mg/dL", w: "100-125", c: ">126" }, "HbA1c": { n: "<5.7%", w: "5.7%-6.4%", c: ">6.5%" } }
+        };
+
+        let entries = [];
+
+        window.onload = () => {
+            const user = sessionStorage.getItem('currentUser');
+            if (!user) window.location.href = "login.html";
+            else { document.getElementById('userNameDisplay').innerText = user.toUpperCase(); updateBiomarkerOptions(); }
+        };
+
+        function updateBiomarkerOptions() {
+            const panel = document.getElementById('panelType').value;
+            const select = document.getElementById('biomarkerSelect');
+            select.innerHTML = "";
+            Object.keys(clinicalData[panel]).forEach(m => {
+                const opt = document.createElement('option'); opt.value = m; opt.innerHTML = m; select.appendChild(opt);
+            });
+            updateRefRanges();
+        }
+
+        function updateRefRanges() {
+            const panel = document.getElementById('panelType').value;
+            const marker = document.getElementById('biomarkerSelect').value;
+            const ranges = clinicalData[panel][marker];
+            document.getElementById('rangeNormal').innerText = ranges.n;
+            document.getElementById('rangeWarning').innerText = ranges.w;
+            document.getElementById('rangeCritical').innerText = ranges.c;
+        }
+
+        document.getElementById('patientForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const panel = document.getElementById('panelType').value;
+            const marker = document.getElementById('biomarkerSelect').value;
+            const riskVal = parseInt(document.getElementById('riskLevel').value);
+            const timestamp = new Date().toLocaleTimeString();
+            entries.push({ timestamp, panel, marker, riskVal });
+            updateUI();
+        });
+
+        function updateUI() {
+            const tbody = document.querySelector('#patientTable tbody');
+            tbody.innerHTML = "";
+            entries.forEach((e, i) => {
+                const row = tbody.insertRow();
+                let b = e.riskVal == 0 ? '<span class="badge" style="background:#e6fffa;color:#2c7a7b;">NORMAL</span>' :
+                        e.riskVal == 1 ? '<span class="badge" style="background:#fffaf0;color:#9c4221;">WARNING</span>' :
+                        '<span class="badge" style="background:#fff5f5;color:#c53030;">CRITICAL</span>';
+                row.innerHTML = `<td>${e.timestamp}</td><td><strong>${e.panel}</strong></td><td>${e.marker}</td><td>${b}</td><td class="no-print"><button onclick="del(${i})" style="border:none;background:none;cursor:pointer;">🗑️</button></td>`;
+            });
+            updateMeter();
+        }
+
+        function del(i) { entries.splice(i, 1); updateUI(); }
+
+        function updateMeter() {
+            const needle = document.getElementById('needle');
+            const txt = document.getElementById('statusText');
+            if (entries.length === 0) { needle.style.transform = `rotate(-90deg)`; txt.innerText = "NO DATA"; return; }
+            const avg = entries.reduce((s, x) => s + x.riskVal, 0) / entries.length;
+            needle.style.transform = `rotate(${(avg * 90) - 90}deg)`;
+            if (avg < 0.6) { txt.innerText = "STABLE"; txt.style.color = "var(--accent)"; }
+            else if (avg < 1.4) { txt.innerText = "CAUTION"; txt.style.color = "var(--warning)"; }
+            else { txt.innerText = "CRITICAL"; txt.style.color = "var(--danger)"; }
+        }
+
+        function exportPDF() {
+            document.getElementById('displayPatient').innerText = document.getElementById('patientName').value || "Unknown";
+            document.getElementById('displayCase').innerText = document.getElementById('caseID').value || "N/A";
+            document.getElementById('reportDate').innerText = new Date().toLocaleDateString();
+            
+            const element = document.getElementById('reportArea');
+            const header = document.getElementById('pdfHeader');
+            const sig = document.getElementById('pdfSignature');
+            
+            header.style.display = "block"; sig.style.display = "block";
+            
+            const opt = {
+                margin: 15,
+                filename: `SB_Report_${document.getElementById('patientName').value || 'Patient'}.pdf`,
+                html2canvas: { scale: 3 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            html2pdf().set(opt).from(element).save().then(() => {
+                header.style.display = "none"; sig.style.display = "none";
+            });
+        }
+    </script>
+</body>
+</html>
